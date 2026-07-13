@@ -2,7 +2,6 @@ console.log("Welcome to Spotify!");
 
 let songIndex = 0;
 let audioElement = new Audio('songs/1.mp3');
-let masterPlay = document.getElementById('masterPlay');
 let myProgressBar = document.getElementById('myProgressBar');
 let gif = document.getElementById('gif');
 let masterSongName = document.getElementById('masterSongName');
@@ -21,30 +20,53 @@ let songs = [
     {songName: "Na Jaana - Salam-e-Ishq", filePath: "songs/10.mp3", coverPath: "covers/10.jpg"},
 ]
 
-songItems.forEach((element, i)=>{ 
-    element.getElementsByTagName("img")[0].src = songs[i].coverPath; 
-    element.getElementsByClassName("songName")[0].innerText = songs[i].songName; 
+songItems.forEach((element, i)=>{
+    element.getElementsByTagName("img")[0].src = songs[i].coverPath;
+    element.getElementsByClassName("songName")[0].innerText = songs[i].songName;
 })
 
-// Handle play/pause click
-masterPlay.addEventListener('click', ()=>{
-    if(audioElement.paused || audioElement.currentTime<=0){
-        audioElement.play().catch(err => console.error("PLAY FAILED:", err));
-        masterPlay.classList.remove('fa-circle-play');
-        masterPlay.classList.add('fa-circle-pause');
-        gif.style.opacity = 1;
+// FIX: Font Awesome's kit script replaces <i> icons with <svg> elements after page load,
+// which silently removes any event listeners already attached to the original <i>.
+// Solution: attach ONE listener to the stable parent .icons div instead (event delegation),
+// so it keeps working no matter what Font Awesome swaps in.
+document.querySelector('.icons').addEventListener('click', (e)=>{
+
+    const target = e.target.closest('[id]');
+    if(!target) return;
+
+    if(target.id === 'masterPlay'){
+        if(audioElement.paused || audioElement.currentTime<=0){
+            audioElement.play().catch(err => console.error("PLAY FAILED:", err));
+            target.classList.remove('fa-circle-play');
+            target.classList.add('fa-circle-pause');
+            gif.style.opacity = 1;
+        }
+        else{
+            audioElement.pause();
+            target.classList.remove('fa-circle-pause');
+            target.classList.add('fa-circle-play');
+            gif.style.opacity = 0;
+        }
     }
-    else{
-        audioElement.pause();
-        masterPlay.classList.remove('fa-circle-pause');
-        masterPlay.classList.add('fa-circle-play');
-        gif.style.opacity = 0;
+    else if(target.id === 'next'){
+        if(songIndex>=9){ songIndex = 0; } else { songIndex += 1; }
+        audioElement.src = `songs/${songIndex+1}.mp3`;
+        masterSongName.innerText = songs[songIndex].songName;
+        audioElement.currentTime = 0;
+        audioElement.play().catch(err => console.error("PLAY FAILED:", err));
+    }
+    else if(target.id === 'previous'){
+        if(songIndex<=0){ songIndex = 0; } else { songIndex -= 1; }
+        audioElement.src = `songs/${songIndex+1}.mp3`;
+        masterSongName.innerText = songs[songIndex].songName;
+        audioElement.currentTime = 0;
+        audioElement.play().catch(err => console.error("PLAY FAILED:", err));
     }
 })
 
 // Listen to Events
-audioElement.addEventListener('timeupdate', ()=>{ 
-    let progress = parseInt((audioElement.currentTime/audioElement.duration)* 100); 
+audioElement.addEventListener('timeupdate', ()=>{
+    let progress = parseInt((audioElement.currentTime/audioElement.duration)* 100);
     myProgressBar.value = progress;
 })
 
@@ -59,9 +81,10 @@ const makeAllPlays = ()=>{
     })
 }
 
-// New: individual song list play buttons
+// Note: song list buttons still use the OLD direct-listener approach here —
+// they'll hit the same Font Awesome bug and get fixed in the next commit.
 Array.from(document.getElementsByClassName('songItemPlay')).forEach((element)=>{
-    element.addEventListener('click', (e)=>{ 
+    element.addEventListener('click', (e)=>{
         makeAllPlays();
         songIndex = parseInt(e.target.id);
         e.target.classList.remove('fa-circle-play');
@@ -71,38 +94,7 @@ Array.from(document.getElementsByClassName('songItemPlay')).forEach((element)=>{
         audioElement.currentTime = 0;
         audioElement.play();
         gif.style.opacity = 1;
-        masterPlay.classList.remove('fa-circle-play');
-        masterPlay.classList.add('fa-circle-pause');
+        document.getElementById('masterPlay').classList.remove('fa-circle-play');
+        document.getElementById('masterPlay').classList.add('fa-circle-pause');
     })
-})
-
-// New: next/previous buttons (bug: HTML icons don't have id="next"/"previous" yet!)
-document.getElementById('next').addEventListener('click', ()=>{
-    if(songIndex>=9){
-        songIndex = 0
-    }
-    else{
-        songIndex += 1;
-    }
-    audioElement.src = `songs/${songIndex+1}.mp3`;
-    masterSongName.innerText = songs[songIndex].songName;
-    audioElement.currentTime = 0;
-    audioElement.play();
-    masterPlay.classList.remove('fa-circle-play');
-    masterPlay.classList.add('fa-circle-pause');
-})
-
-document.getElementById('previous').addEventListener('click', ()=>{
-    if(songIndex<=0){
-        songIndex = 0
-    }
-    else{
-        songIndex -= 1;
-    }
-    audioElement.src = `songs/${songIndex+1}.mp3`;
-    masterSongName.innerText = songs[songIndex].songName;
-    audioElement.currentTime = 0;
-    audioElement.play();
-    masterPlay.classList.remove('fa-circle-play');
-    masterPlay.classList.add('fa-circle-pause');
 })
