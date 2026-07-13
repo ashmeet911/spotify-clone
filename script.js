@@ -29,7 +29,7 @@ songItems.forEach((element, i)=>{
 // Handle play/pause click
 masterPlay.addEventListener('click', ()=>{
     if(audioElement.paused || audioElement.currentTime<=0){
-        audioElement.play();
+        audioElement.play().catch(err => console.error("PLAY FAILED:", err));
         masterPlay.classList.remove('fa-circle-play');
         masterPlay.classList.add('fa-circle-pause');
         gif.style.opacity = 1;
