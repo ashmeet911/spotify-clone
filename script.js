@@ -25,10 +25,12 @@ songItems.forEach((element, i)=>{
     element.getElementsByClassName("songName")[0].innerText = songs[i].songName;
 })
 
-// FIX: Font Awesome's kit script replaces <i> icons with <svg> elements after page load,
-// which silently removes any event listeners already attached to the original <i>.
-// Solution: attach ONE listener to the stable parent .icons div instead (event delegation),
-// so it keeps working no matter what Font Awesome swaps in.
+// Always fetch the LIVE masterPlay element, since Font Awesome replaces it with an <svg>
+function getMasterPlay(){
+    return document.getElementById('masterPlay');
+}
+
+// Handle play/pause + next/previous via event delegation on the stable .icons parent
 document.querySelector('.icons').addEventListener('click', (e)=>{
 
     const target = e.target.closest('[id]');
@@ -54,6 +56,10 @@ document.querySelector('.icons').addEventListener('click', (e)=>{
         masterSongName.innerText = songs[songIndex].songName;
         audioElement.currentTime = 0;
         audioElement.play().catch(err => console.error("PLAY FAILED:", err));
+        const mp = getMasterPlay();
+        mp.classList.remove('fa-circle-play');
+        mp.classList.add('fa-circle-pause');
+        gif.style.opacity = 1;
     }
     else if(target.id === 'previous'){
         if(songIndex<=0){ songIndex = 0; } else { songIndex -= 1; }
@@ -61,6 +67,10 @@ document.querySelector('.icons').addEventListener('click', (e)=>{
         masterSongName.innerText = songs[songIndex].songName;
         audioElement.currentTime = 0;
         audioElement.play().catch(err => console.error("PLAY FAILED:", err));
+        const mp = getMasterPlay();
+        mp.classList.remove('fa-circle-play');
+        mp.classList.add('fa-circle-pause');
+        gif.style.opacity = 1;
     }
 })
 
@@ -81,20 +91,22 @@ const makeAllPlays = ()=>{
     })
 }
 
-// Note: song list buttons still use the OLD direct-listener approach here —
-// they'll hit the same Font Awesome bug and get fixed in the next commit.
-Array.from(document.getElementsByClassName('songItemPlay')).forEach((element)=>{
-    element.addEventListener('click', (e)=>{
-        makeAllPlays();
-        songIndex = parseInt(e.target.id);
-        e.target.classList.remove('fa-circle-play');
-        e.target.classList.add('fa-circle-pause');
-        audioElement.src = `songs/${songIndex+1}.mp3`;
-        masterSongName.innerText = songs[songIndex].songName;
-        audioElement.currentTime = 0;
-        audioElement.play();
-        gif.style.opacity = 1;
-        document.getElementById('masterPlay').classList.remove('fa-circle-play');
-        document.getElementById('masterPlay').classList.add('fa-circle-pause');
-    })
+// Song list play buttons — also delegated, since Font Awesome replaces these <i> tags too
+document.querySelector('.songItemContainer').addEventListener('click', (e)=>{
+    const target = e.target.closest('.songItemPlay');
+    if(!target) return;
+
+    makeAllPlays();
+    songIndex = parseInt(target.id);
+    target.classList.remove('fa-circle-play');
+    target.classList.add('fa-circle-pause');
+    audioElement.src = `songs/${songIndex+1}.mp3`;
+    masterSongName.innerText = songs[songIndex].songName;
+    audioElement.currentTime = 0;
+    audioElement.play().catch(err => console.error("PLAY FAILED:", err));
+    gif.style.opacity = 1;
+
+    const mp = getMasterPlay();
+    mp.classList.remove('fa-circle-play');
+    mp.classList.add('fa-circle-pause');
 })
